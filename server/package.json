@@ -1,0 +1,17 @@
+{
+  "name": "kumba-backend-server",
+  "version": "1.1.0",
+  "description": "Serveur Backend Central & API de Synchronisation pour KUMBA Business",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.110.8",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.19.2",
+    "sqlite3": "^6.0.1"
+  }
+}

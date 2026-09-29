@@ -1,0 +1,384 @@
+import 'package:flutter/material.dart';
+
+/// Palette Lynkstor v2 — extraite de docs/reference/template.jpeg.
+///
+/// Multi-teintes vives (bleu, violet, vert, peche, rose). Comportements Android.
+class AppColors {
+  AppColors._();
+
+  // ——— Tokens extraits (source de verite) ———
+  static const Color headerStart = Color(0xFF0A5CF6);
+  static const Color headerMid = Color(0xFF1F78EF);
+  static const Color headerEnd = Color(0xFF4AA3F5);
+  static const Color headerMint = Color(0xFF5CDFFF);
+  static const Color sellStart = Color(0xFF00C4FF);
+  static const Color sellEnd = Color(0xFF2F6BFF);
+  static const Color collectStart = Color(0xFF8B4AFF);
+  static const Color collectEnd = Color(0xFF5A22E0);
+  static const Color lynkViolet = Color(0xFF5B16ED);
+  static const Color lynkVioletSoft = Color(0xFFEFE8FF);
+  static const Color lynkStar = Color(0xFFFAAD13);
+  static const Color lynkBody = Color(0xFF1A6FE8);
+  static const Color lynkOnline = Color(0xFF22C55E);
+  static const Color kpiSalesBg = Color(0xFFF3FAF6);
+  static const Color kpiSales = Color(0xFF1A9A5C);
+  static const Color kpiCollectBg = Color(0xFFF4F7FC);
+  static const Color kpiCollect = Color(0xFF1A6FE8);
+  static const Color kpiDebtBg = Color(0xFFFBF6F3);
+  static const Color kpiDebt = Color(0xFFD26532);
+  static const Color kpiDepositBg = Color(0xFFFBF4F7);
+  static const Color kpiDeposit = Color(0xFFC44570);
+  static const Color pageBg = Color(0xFFF5F6FB);
+  static const Color dock = Color(0xFFFFFFFF);
+  static const Color dockInactive = Color(0xFF5A6578);
+  static const Color fab = Color(0xFF157EF5);
+  static const Color ink = Color(0xFF1C2433);
+  static const Color inkMuted = Color(0xFF5A6578);
+  static const Color inkFaint = Color(0xFF8B95A7);
+
+  // ——— Marque (aliases v2) ———
+  static const Color ocean = headerStart;
+  static const Color oceanDeep = Color(0xFF0839C9);
+  static const Color sky = headerEnd;
+  static const Color cream = pageBg;
+  static const Color creamCard = Color(0xFFFFFFFF);
+  static const Color coral = kpiDebt;
+  static const Color coralSoft = kpiDebtBg;
+  static const Color aiViolet = lynkViolet;
+  static const Color aiCyan = headerMint;
+  static const Color aiGlow = Color(0xFF7B8CFF);
+
+  /// Bleu vif — CTA, FAB, item actif.
+  static const Color primary = fab;
+  static const Color primaryContainer = headerStart;
+  static const Color onPrimary = Color(0xFFFFFFFF);
+  static const Color onPrimaryContainer = Color(0xFFFFFFFF);
+  static const Color primaryFixed = Color(0xFFE3F2FC);
+  static const Color secondary = Color(0xFF0B4CC8);
+  static const Color secondaryContainer = sky;
+
+  /// Turquoise — accent signature.
+  static const Color tertiary = Color(0xFF2EC4B6);
+  static const Color tertiaryContainer = Color(0xFF5DDFD2);
+  static const Color tertiaryFixed = Color(0xFFD5F7F3);
+  static const Color amber = Color(0xFFF5A623);
+  static const Color emerald = Color(0xFF2EC4B6);
+  static const Color rose = Color(0xFFF43F5E);
+
+  // ——— Surfaces : blanc simple / cassé, teinte ciel très légère ———
+  static const Color background = pageBg;
+  static const Color surface = creamCard;
+  static const Color surfaceBright = Color(0xFFFFFFFF);
+  static const Color surfaceContainerLowest = Color(0xFFFFFFFF);
+  static const Color surfaceContainerLow = Color(0xFFF3F5FB);
+  static const Color surfaceContainer = Color(0xFFE8ECF8);
+  static const Color surfaceContainerHigh = Color(0xFFD8DFF4);
+  static const Color surfaceContainerHighest = Color(0xFFC8D2EB);
+  static const Color onSurface = ink;
+  static const Color onSurfaceVariant = inkMuted;
+  static const Color outline = Color(0xFF8FA3B5);
+  static const Color outlineVariant = Color(0xFFD0DFEB);
+
+  /// Accents froids (remplacent or/sahel).
+  static const Color skyMist = Color(0xFFB8E0F5);
+  static const Color skyGlow = Color(0xFF7EC8F0);
+  static const Color turquoise = Color(0xFF2EC4B6);
+  static const Color turquoiseSoft = Color(0xFFD5F7F3);
+  static const Color turquoiseDeep = Color(0xFF1A9E93);
+
+  /// Color-blocks — uniquement ciel / océan / blanc.
+  static const Color ice = Color(0xFFD6EEF8);
+  static const Color iceDeep = Color(0xFF9ED4EE);
+  static const Color blockIce = kpiCollectBg;
+  static const Color blockSky = Color(0xFFB8E0F5);
+  static const Color blockCloud = kpiCollectBg;
+  static const Color blockOcean = Color(0xFF7EC8F0);
+  static const Color blockDeep = fab;
+  static const Color blockWhite = Color(0xFFFFFFFF);
+  static const Color blockYellow = kpiSalesBg;
+  static const Color blockMint = kpiSalesBg;
+  static const Color blockPeach = kpiDebtBg;
+  static const Color blockLavender = kpiCollectBg;
+  static const Color blockOrange = kpiDebtBg;
+  static const Color inkSoft = secondary;
+  static const Color navy = secondary;
+  static const Color navyMid = headerStart;
+  static const Color canvas = background;
+  static const Color punch = primary;
+
+  static const List<Color> catalogBlocks = [
+    blockCloud,
+    ice,
+    blockSky,
+    iceDeep,
+    blockOcean,
+    primaryFixed,
+  ];
+
+  static Color catalogBlock(int index) =>
+      catalogBlocks[index.abs() % catalogBlocks.length];
+
+  // ——— Alias rétrocompat (écrans existants) ———
+  static const Color indigoDeep = primary;
+  static const Color indigo = primaryContainer;
+  static const Color indigoMid = secondary;
+  static const Color indigoLight = secondaryContainer;
+  static const Color indigoSoft = primaryFixed;
+
+  /// Ancien or → turquoise (évite les accents chauds résiduels).
+  static const Color sahelGold = turquoise;
+  static const Color goldSoft = turquoise;
+  static const Color gold = turquoise;
+  static const Color goldLight = turquoiseSoft;
+
+  static const Color sahelSand = skyMist;
+  static const Color clay = Color(0xFFE07A5F);
+  static const Color terracotta = clay;
+  static const Color terracottaSoft = Color(0xFFFFE8DC);
+
+  static const Color forest = emerald;
+  static const Color forestMid = Color(0xFF5DDFD2);
+  static const Color forestSoft = turquoiseSoft;
+
+  static const Color cacao = onSurface;
+  static const Color cacaoMid = onSurfaceVariant;
+  static const Color cacaoSoft = surfaceContainerLow;
+
+  static const Color ivory = background;
+  static const Color ivoryWarm = surfaceContainerLow;
+  static const Color surfaceLight = surfaceContainerLowest;
+
+  static const Color anthracite = onSurface;
+  static const Color anthraciteMid = onSurfaceVariant;
+  static const Color anthraciteSoft = outline;
+
+  static const Color white = Color(0xFFFFFFFF);
+  static const Color blackSoft = Color(0xFF0A1622);
+  static const Color grey100 = surfaceContainerLow;
+  static const Color grey200 = surfaceContainer;
+  static const Color grey300 = outlineVariant;
+  static const Color grey400 = outline;
+  static const Color grey500 = onSurfaceVariant;
+  static const Color grey600 = onSurfaceVariant;
+  static const Color grey700 = onSurface;
+
+  // ——— Sémantiques ———
+  static const Color success = Color(0xFF2F9E7A);
+  static const Color successSoft = Color(0xFFD8F3EA);
+  static const Color warning = Color(0xFFD4A017);
+  static const Color warningSoft = Color(0xFFF8EBC7);
+  static const Color error = Color(0xFFD45B6A);
+  static const Color errorSoft = Color(0xFFF8DDE1);
+  static const Color info = secondary;
+  static const Color infoSoft = primaryFixed;
+
+  static const Color draft = outline;
+  static const Color pending = amber;
+  static const Color synced = turquoise;
+  static const Color offline = outline;
+  static const Color unpaid = rose;
+  static const Color lowStock = amber;
+  static const Color debt = rose;
+  static const Color refund = secondary;
+
+  // ——— Mode sombre (nuit océan) ———
+  static const Color darkBg = Color(0xFF061018);
+  static const Color darkSurface = Color(0xFF0C1C2A);
+  static const Color darkCard = Color(0xFF122636);
+  static const Color darkBorder = Color(0xFF1E3A52);
+  static const Color darkText = Color(0xFFF0F7FC);
+  static const Color darkTextSecondary = Color(0xFFB8C0CC);
+
+  // ——— Verre iOS (nav / chrome flottant) ———
+  static Color glassLight = const Color(0xFFF8FBFE).withValues(alpha: 0.78);
+  static Color glassDark = const Color(0xFF0C1C2A).withValues(alpha: 0.78);
+  static Color glassBorder = Colors.white.withValues(alpha: 0.55);
+
+  /// Surfaces adaptées light / dark (composants partagés).
+  static bool isDark(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark;
+
+  static Color card(BuildContext context) =>
+      isDark(context) ? darkCard : surfaceBright;
+
+  static Color elevated(BuildContext context) =>
+      isDark(context) ? darkSurface : surfaceContainerLowest;
+
+  static Color mutedFill(BuildContext context) =>
+      isDark(context) ? darkSurface : primaryFixed;
+
+  static Color glass(BuildContext context, {bool performance = false}) {
+    if (isDark(context)) {
+      return darkCard.withValues(alpha: performance ? 0.96 : 0.72);
+    }
+    return surfaceBright.withValues(alpha: performance ? 0.96 : 0.78);
+  }
+
+  static Color glassStroke(BuildContext context) => isDark(context)
+      ? Colors.white.withValues(alpha: 0.10)
+      : Colors.white.withValues(alpha: 0.72);
+
+  /// Ombre teintée ciel — jamais noir pur sur fond clair.
+  static List<BoxShadow> cardShadow({
+    double opacity = 0.08,
+    bool dark = false,
+  }) => [
+    BoxShadow(
+      color: (dark ? Colors.black : const Color(0xFF1A7BC7)).withValues(
+        alpha: dark ? opacity * 2.2 : opacity,
+      ),
+      blurRadius: 24,
+      offset: const Offset(0, 12),
+      spreadRadius: -8,
+    ),
+  ];
+
+  /// Ombre douce turquoise pour accents positifs.
+  static List<BoxShadow> accentShadow({double opacity = 0.18}) => [
+    BoxShadow(
+      color: turquoise.withValues(alpha: opacity),
+      blurRadius: 20,
+      offset: const Offset(0, 10),
+      spreadRadius: -6,
+    ),
+  ];
+
+  static const LinearGradient primaryGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [sellStart, fab, headerStart],
+    stops: [0, 0.48, 1],
+  );
+
+  static const LinearGradient brandGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [fab, headerStart],
+  );
+
+  static const LinearGradient premiumGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [collectStart, collectEnd],
+  );
+
+  static const LinearGradient aiGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [headerStart, lynkViolet],
+  );
+
+  static const LinearGradient headerGradient = LinearGradient(
+    begin: Alignment.centerLeft,
+    end: Alignment.centerRight,
+    colors: [headerStart, headerMid, Color(0x664AA3F5)],
+    stops: [0, 0.42, 1],
+  );
+
+  static const LinearGradient sellGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [sellStart, sellEnd],
+  );
+
+  static const LinearGradient collectGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [collectStart, collectEnd],
+  );
+
+  static List<BoxShadow> tintedShadow(Color color, {double opacity = 0.26}) => [
+    BoxShadow(
+      color: color.withValues(alpha: opacity),
+      blurRadius: 20,
+      offset: const Offset(0, 10),
+      spreadRadius: -8,
+    ),
+  ];
+
+  /// Gradient turquoise (succès / CTA secondaire).
+  static const LinearGradient turquoiseGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Color(0xFF5DDFD2), turquoise, Color(0xFF1A9E93)],
+    stops: [0, 0.5, 1],
+  );
+
+  static const LinearGradient heroGradient = headerGradient;
+
+  /// CTA océan.
+  static const LinearGradient inkGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [primaryContainer, secondary],
+  );
+
+  /// Carte océan (action secondaire).
+  static const LinearGradient navyGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Color(0xFF1A7BC7), Color(0xFF0B5F9A)],
+  );
+
+  static ColorScheme lightScheme = const ColorScheme(
+    brightness: Brightness.light,
+    primary: primary,
+    onPrimary: onPrimary,
+    primaryContainer: primaryContainer,
+    onPrimaryContainer: onPrimaryContainer,
+    secondary: secondary,
+    onSecondary: onPrimary,
+    secondaryContainer: primaryFixed,
+    onSecondaryContainer: secondary,
+    tertiary: tertiary,
+    onTertiary: onPrimary,
+    tertiaryContainer: tertiaryFixed,
+    onTertiaryContainer: Color(0xFF003731),
+    error: error,
+    onError: onPrimary,
+    errorContainer: errorSoft,
+    onErrorContainer: Color(0xFF8B1030),
+    surface: surfaceContainerLowest,
+    onSurface: onSurface,
+    surfaceContainerHighest: surfaceContainerHighest,
+    onSurfaceVariant: onSurfaceVariant,
+    outline: outline,
+    outlineVariant: outlineVariant,
+    shadow: blackSoft,
+    scrim: blackSoft,
+    inverseSurface: Color(0xFF1A2E40),
+    onInverseSurface: Color(0xFFE8F2FA),
+    inversePrimary: Color(0xFF9AD4FF),
+  );
+
+  static ColorScheme darkScheme = const ColorScheme(
+    brightness: Brightness.dark,
+    primary: fab,
+    onPrimary: onPrimary,
+    primaryContainer: Color(0xFF0A3A7A),
+    onPrimaryContainer: Color(0xFFF0F7FC),
+    secondary: Color(0xFFE8EEF4),
+    onSecondary: darkBg,
+    secondaryContainer: darkCard,
+    onSecondaryContainer: Color(0xFFF0F7FC),
+    tertiary: Color(0xFF2EC4B6),
+    onTertiary: onPrimary,
+    tertiaryContainer: Color(0xFF1A9E93),
+    onTertiaryContainer: Color(0xFFF0F7FC),
+    error: Color(0xFFE0707C),
+    onError: onPrimary,
+    errorContainer: Color(0xFF8B1030),
+    onErrorContainer: errorSoft,
+    surface: darkBg,
+    onSurface: darkText,
+    surfaceContainerHighest: darkCard,
+    onSurfaceVariant: Color(0xFFB8C0CC),
+    outline: darkBorder,
+    outlineVariant: darkSurface,
+    shadow: Colors.black,
+    scrim: Colors.black,
+    inverseSurface: surfaceContainerHighest,
+    onInverseSurface: onSurface,
+    inversePrimary: fab,
+  );
+}

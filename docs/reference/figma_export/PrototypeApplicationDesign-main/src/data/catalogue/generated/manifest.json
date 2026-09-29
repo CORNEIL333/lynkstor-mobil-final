@@ -1,0 +1,388 @@
+[
+  {
+    "id": "boulangerie",
+    "title": "Catalogue léger pour petites boulangeries — Cameroun 2026",
+    "sectors": [
+      "Boulangerie"
+    ],
+    "emoji": "🥖",
+    "version": "005821011135bc4905388f64bffdd714805785ecc5e8f84cb36c894f33c8c260",
+    "observedOn": "2026-09-03",
+    "categories": [
+      {
+        "id": "boulangerie:pains_viennoiseries",
+        "name": "Pains et viennoiseries",
+        "description": "Pains, beignets, viennoiseries et produits salés fabriqués ou vendus par une petite boulangerie.",
+        "sourceId": "pains_viennoiseries"
+      },
+      {
+        "id": "boulangerie:gateaux_patisseries",
+        "name": "Gâteaux et pâtisseries",
+        "description": "Cakes, sablés, entremets et pâtisseries finies.",
+        "sourceId": "gateaux_patisseries"
+      },
+      {
+        "id": "boulangerie:matieres_premieres",
+        "name": "Matières premières",
+        "description": "Farines, levures, sucres, matières grasses, lait et crèmes.",
+        "sourceId": "matieres_premieres"
+      },
+      {
+        "id": "boulangerie:ingredients_decoration",
+        "name": "Ingrédients et décoration",
+        "description": "Chocolat, cacao, arômes, fruits secs, confitures, glaçages et décors.",
+        "sourceId": "ingredients_decoration"
+      },
+      {
+        "id": "boulangerie:emballages_consommables",
+        "name": "Emballages et consommables",
+        "description": "Caissettes, boîtes, semelles, poches, gants et consommables.",
+        "sourceId": "emballages_consommables"
+      },
+      {
+        "id": "boulangerie:petit_materiel",
+        "name": "Petit matériel",
+        "description": "Moules, spatules, balances, fouets et petites machines.",
+        "sourceId": "petit_materiel"
+      },
+      {
+        "id": "boulangerie:boissons_accompagnements",
+        "name": "Boissons et accompagnements",
+        "description": "Eaux, jus, cafés et boissons courantes à proposer avec les produits.",
+        "sourceId": "boissons_accompagnements"
+      },
+      {
+        "id": "boulangerie:produits_revente_snacking",
+        "name": "Produits de revente et snacking",
+        "description": "Biscuits, cakes emballés et compléments de rayon.",
+        "sourceId": "produits_revente_snacking"
+      }
+    ],
+    "count": 236,
+    "canonicalCount": 236,
+    "pricedCount": 236,
+    "reviewCount": 12
+  },
+  {
+    "id": "quincaillerie-menuiserie",
+    "title": "Catalogues de quincaillerie et menuiserie — Cameroun 2026",
+    "sectors": [
+      "Quincaillerie",
+      "Menuiserie",
+      "Matériaux de construction"
+    ],
+    "emoji": "🔨",
+    "version": "0e4ec3045859489b130084f8d7a1c837c158cdd0d7aa181632e614345e794192",
+    "observedOn": "2026-09-02",
+    "categories": [
+      {
+        "id": "quincaillerie-menuiserie:materiaux_construction",
+        "name": "Matériaux de construction",
+        "description": "Ciment, granulats, briques, fers, tôles, profilés, préfabrication et gros œuvre.",
+        "subcatalogues": [
+          "Ciment et liants",
+          "Sable et granulats",
+          "Briques et blocs",
+          "Fer, acier et tôles",
+          "Couverture et charpente",
+          "Chimie du bâtiment",
+          "Autres matériaux"
+        ],
+        "sourceId": "materiaux_construction"
+      },
+      {
+        "id": "quincaillerie-menuiserie:plomberie_hydraulique",
+        "name": "Plomberie et hydraulique",
+        "description": "Tuyaux, raccords, vannes, pompes, réservoirs et accessoires hydrauliques.",
+        "subcatalogues": [
+          "Tuyaux et gaines",
+          "Raccords",
+          "Robinetterie technique",
+          "Pompes et surpresseurs",
+          "Réservoirs et traitement d’eau",
+          "Accessoires de plomberie"
+        ],
+        "sourceId": "plomberie_hydraulique"
+      },
+      {
+        "id": "quincaillerie-menuiserie:sanitaire_salle_bain",
+        "name": "Sanitaire et salle de bain",
+        "description": "WC, lavabos, éviers, douches, baignoires, chauffe-eau et accessoires.",
+        "subcatalogues": [
+          "WC et bidets",
+          "Lavabos et éviers",
+          "Douches et baignoires",
+          "Robinetterie sanitaire",
+          "Chauffe-eau",
+          "Accessoires sanitaires"
+        ],
+        "sourceId": "sanitaire_salle_bain"
+      },
+      {
+        "id": "quincaillerie-menuiserie:electricite_eclairage",
+        "name": "Électricité et éclairage",
+        "description": "Câbles, appareillage, protection, tableaux, luminaires et accessoires.",
+        "subcatalogues": [
+          "Câbles et fils",
+          "Prises et interrupteurs",
+          "Protection et tableaux",
+          "Éclairage",
+          "Gaines et accessoires",
+          "Énergie solaire"
+        ],
+        "sourceId": "electricite_eclairage"
+      },
+      {
+        "id": "quincaillerie-menuiserie:peinture_etancheite",
+        "name": "Peinture, étanchéité et finitions",
+        "description": "Peintures, vernis, enduits, colles, diluants, mastics et étanchéité.",
+        "subcatalogues": [
+          "Peintures",
+          "Vernis et lasures",
+          "Enduits et mastics",
+          "Étanchéité",
+          "Colles et adhésifs",
+          "Diluants et solvants",
+          "Accessoires de peinture"
+        ],
+        "sourceId": "peinture_etancheite"
+      },
+      {
+        "id": "quincaillerie-menuiserie:carrelage_revetements",
+        "name": "Carrelage et revêtements",
+        "description": "Carreaux de sol et mur, faïence, marbre, mosaïque et pose.",
+        "subcatalogues": [
+          "Carreaux de sol",
+          "Carreaux muraux",
+          "Faïence et mosaïque",
+          "Pierre et marbre",
+          "Accessoires de pose"
+        ],
+        "sourceId": "carrelage_revetements"
+      },
+      {
+        "id": "quincaillerie-menuiserie:outillage_manuel",
+        "name": "Outillage manuel",
+        "description": "Outils de mesure, maçonnerie, coupe, serrage et maintenance.",
+        "subcatalogues": [
+          "Mesure et traçage",
+          "Maçonnerie",
+          "Serrage et vissage",
+          "Coupe manuelle",
+          "Marteaux et burins",
+          "Coffrets et rangement",
+          "Autres outils manuels"
+        ],
+        "sourceId": "outillage_manuel"
+      },
+      {
+        "id": "quincaillerie-menuiserie:electroportatif_machines",
+        "name": "Électroportatif et machines",
+        "description": "Perceuses, meuleuses, scies, ponceuses, compresseurs et machines d’atelier.",
+        "subcatalogues": [
+          "Perçage et vissage",
+          "Découpe et sciage",
+          "Meulage et polissage",
+          "Ponçage",
+          "Compresseurs",
+          "Machines stationnaires",
+          "Accessoires machines"
+        ],
+        "sourceId": "electroportatif_machines"
+      },
+      {
+        "id": "quincaillerie-menuiserie:quincaillerie_fixation_serrurerie",
+        "name": "Quincaillerie, fixation et serrurerie",
+        "description": "Visserie, clous, boulons, serrures, cadenas, poignées et accessoires de fixation.",
+        "subcatalogues": [
+          "Visserie et boulonnerie",
+          "Clous et pointes",
+          "Chevilles et ancrages",
+          "Serrures et cadenas",
+          "Poignées et accessoires",
+          "Chaînes, câbles et cordages",
+          "Quincaillerie générale"
+        ],
+        "sourceId": "quincaillerie_fixation_serrurerie"
+      },
+      {
+        "id": "quincaillerie-menuiserie:soudure_metallerie",
+        "name": "Soudure et métallerie",
+        "description": "Postes à souder, électrodes, consommables, découpe et travail du métal.",
+        "subcatalogues": [
+          "Postes à souder",
+          "Électrodes et fils",
+          "Découpe métal",
+          "Consommables",
+          "Accessoires de soudure"
+        ],
+        "sourceId": "soudure_metallerie"
+      },
+      {
+        "id": "quincaillerie-menuiserie:epi_securite",
+        "name": "EPI et sécurité",
+        "description": "Casques, gants, chaussures, lunettes, masques, signalisation et protection.",
+        "subcatalogues": [
+          "Protection tête et visage",
+          "Protection mains",
+          "Chaussures de sécurité",
+          "Protection respiratoire",
+          "Vêtements de travail",
+          "Signalisation et sécurité"
+        ],
+        "sourceId": "epi_securite"
+      },
+      {
+        "id": "quincaillerie-menuiserie:jardin_energie_nettoyage",
+        "name": "Jardin, énergie et nettoyage",
+        "description": "Jardinage, groupes électrogènes, batteries, nettoyeurs et équipements d’entretien.",
+        "subcatalogues": [
+          "Jardinage",
+          "Groupes électrogènes",
+          "Batteries et chargeurs",
+          "Nettoyage",
+          "Pulvérisation",
+          "Autres équipements"
+        ],
+        "sourceId": "jardin_energie_nettoyage"
+      },
+      {
+        "id": "quincaillerie-menuiserie:menuiserie_ameublement",
+        "name": "Menuiserie et ameublement",
+        "description": "Bois, panneaux, portes, quincaillerie de meuble, machines, consommables et mobilier fini.",
+        "subcatalogues": [
+          "Bois et panneaux",
+          "Portes et fenêtres",
+          "Quincaillerie de meuble",
+          "Colles et finitions bois",
+          "Machines de menuiserie",
+          "Outils de menuiserie",
+          "Aluminium et verre",
+          "Mobilier fini",
+          "Accessoires de pose"
+        ],
+        "sourceId": "menuiserie_ameublement"
+      }
+    ],
+    "count": 4481,
+    "canonicalCount": 4316,
+    "pricedCount": 3345,
+    "reviewCount": 2203
+  },
+  {
+    "id": "parfumerie",
+    "title": "Catalogue de démarrage pour parfumerie moyenne — Cameroun 2026",
+    "sectors": [
+      "Parfumerie"
+    ],
+    "emoji": "🧴",
+    "version": "ef836824ffd82dfd378eb04f5fb3cc5f6cfd4b895b4811d330b4a780cbfdfe6d",
+    "observedOn": "2026-09-04",
+    "categories": [
+      {
+        "id": "parfumerie:parfums_femme",
+        "name": "Parfums femme",
+        "description": "Eaux de parfum, eaux de toilette, extraits, huiles et formats de poche génériques.",
+        "sourceId": "parfums_femme"
+      },
+      {
+        "id": "parfumerie:parfums_homme",
+        "name": "Parfums homme",
+        "description": "Eaux de parfum, eaux de toilette, extraits, huiles et formats de poche génériques.",
+        "sourceId": "parfums_homme"
+      },
+      {
+        "id": "parfumerie:parfums_unisexes_brume",
+        "name": "Parfums unisexes et brumes",
+        "description": "Parfums sans genre, brumes parfumées, huiles et eaux de Cologne génériques.",
+        "sourceId": "parfums_unisexes_brume"
+      },
+      {
+        "id": "parfumerie:deodorants",
+        "name": "Déodorants",
+        "description": "Formats aérosol, bille, stick et spray corps génériques.",
+        "sourceId": "deodorants"
+      },
+      {
+        "id": "parfumerie:soins_visage",
+        "name": "Soins du visage",
+        "description": "Nettoyants, lotions, crèmes et accessoires de soin visage génériques.",
+        "sourceId": "soins_visage"
+      },
+      {
+        "id": "parfumerie:hygiene_corps",
+        "name": "Hygiène et corps",
+        "description": "Produits de douche, hydratation et soin du corps génériques.",
+        "sourceId": "hygiene_corps"
+      },
+      {
+        "id": "parfumerie:soins_capillaires",
+        "name": "Soins capillaires",
+        "description": "Shampooings, soins, coiffants et huiles capillaires génériques.",
+        "sourceId": "soins_capillaires"
+      },
+      {
+        "id": "parfumerie:maquillage_accessoires",
+        "name": "Maquillage et accessoires",
+        "description": "Maquillage générique et accessoires de pose.",
+        "sourceId": "maquillage_accessoires"
+      }
+    ],
+    "count": 100,
+    "canonicalCount": 100,
+    "pricedCount": 0,
+    "reviewCount": 100
+  },
+  {
+    "id": "telephonie-electromenager",
+    "title": "Catalogue de démarrage téléphonie, accessoires et électroménager — Cameroun 2026",
+    "sectors": [
+      "Électronique"
+    ],
+    "emoji": "📱",
+    "version": "8e6a999b9a1df3abd0c5f7e5d4b3ce5c493db7184dd21a03758bdd6aec02939e",
+    "observedOn": "2026-09-04",
+    "categories": [
+      {
+        "id": "telephonie-electromenager:telephones_smartphones",
+        "name": "Téléphones et smartphones",
+        "description": "Téléphones classiques, smartphones et tablettes génériques, sans marque ni modèle présumé.",
+        "sourceId": "telephones_smartphones"
+      },
+      {
+        "id": "telephonie-electromenager:accessoires_mobile",
+        "name": "Accessoires mobile",
+        "description": "Charge, protection, mémoire et accessoires de prise de vue génériques.",
+        "sourceId": "accessoires_mobile"
+      },
+      {
+        "id": "telephonie-electromenager:audio_connectivite",
+        "name": "Audio et connectivité",
+        "description": "Écoute, enceintes, montres connectées et connexion réseau génériques.",
+        "sourceId": "audio_connectivite"
+      },
+      {
+        "id": "telephonie-electromenager:television_image",
+        "name": "Télévision et image",
+        "description": "Téléviseurs, décodeurs, câbles et supports génériques.",
+        "sourceId": "television_image"
+      },
+      {
+        "id": "telephonie-electromenager:petit_electromenager",
+        "name": "Petit électroménager",
+        "description": "Préparation, cuisson, entretien et ventilation domestiques génériques.",
+        "sourceId": "petit_electromenager"
+      },
+      {
+        "id": "telephonie-electromenager:gros_electromenager",
+        "name": "Gros électroménager",
+        "description": "Froid, lavage et climatisation domestiques génériques.",
+        "sourceId": "gros_electromenager"
+      }
+    ],
+    "count": 120,
+    "canonicalCount": 120,
+    "pricedCount": 0,
+    "reviewCount": 120
+  }
+]

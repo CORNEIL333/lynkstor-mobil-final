@@ -1,0 +1,7 @@
+# Exemple de fichier key.properties pour la signature de production Android KUMBA Business.
+# Copier ce fichier sous android/key.properties et remplir avec vos clés sécurisées.
+
+storePassword=VOTRE_MOT_DE_PASSE_KEYSTORE
+keyPassword=VOTRE_MOT_DE_PASSE_CLE
+keyAlias=kumba_release_key
+storeFile=../kumba_release.jks

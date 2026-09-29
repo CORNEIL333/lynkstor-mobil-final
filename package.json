@@ -1,0 +1,21 @@
+{
+  "name": "lynkstor-neon-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Lynkstor Neon Functions API gateway + infrastructure-as-code (neon.ts).",
+  "scripts": {
+    "deploy": "neon deploy --env .env.local",
+    "dev": "neon dev",
+    "gen:secrets": "node tool/gen_neon_secrets.mjs"
+  },
+  "dependencies": {
+    "@neon/config": "^1.7.3",
+    "@neon/env": "^1.4.4",
+    "@neon/functions": "^0.8.0",
+    "pg": "^8.13.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0"
+  }
+}

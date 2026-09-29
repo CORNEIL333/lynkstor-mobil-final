@@ -1,0 +1,737 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
+
+import '../../app/providers.dart';
+import '../../core/errors/user_error_message.dart';
+import '../../core/permissions/permissions.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_motion.dart';
+import '../../core/utils/money_format.dart';
+import '../../design_system/components/kumba_ios.dart';
+import '../../design_system/components/kumba_ornament.dart';
+import '../../design_system/components/kumba_pressable.dart';
+import '../../design_system/components/kumba_states.dart';
+import '../../design_system/motion/kumba_reveal.dart';
+import '../../design_system/motion/lynk_avatar.dart';
+import '../../features/ai_assistant/lynk_quick_sheet.dart';
+import '../../l10n/app_strings.dart';
+import '../../shared/services/report_service.dart';
+
+final _dailyReportProvider = FutureProvider.autoDispose<DailyReport>((
+  ref,
+) async {
+  final session = ref.watch(sessionProvider);
+  final business = session.business;
+  if (business == null) throw Exception('Aucun commerce');
+  return ref.watch(reportServiceProvider).daily(business.id);
+});
+
+final _lowStockProvider = FutureProvider.autoDispose<int>((ref) async {
+  final session = ref.watch(sessionProvider);
+  final business = session.business;
+  if (business == null) return 0;
+  final products = await ref
+      .watch(productServiceProvider)
+      .list(business.id, lowStock: true);
+  return products.length;
+});
+
+/// Accueil — source de verite docs/reference/template.jpeg
+class DashboardScreen extends ConsumerStatefulWidget {
+  const DashboardScreen({super.key});
+
+  @override
+  ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends ConsumerState<DashboardScreen> {
+  bool _briefOpen = true;
+
+  @override
+  Widget build(BuildContext context) {
+    final session = ref.watch(sessionProvider);
+    final business = session.business;
+    final reportAsync = ref.watch(_dailyReportProvider);
+    final lowStockAsync = ref.watch(_lowStockProvider);
+    final bottomPad = 28.0;
+    final reduce =
+        session.performanceMode ||
+        (MediaQuery.maybeOf(context)?.disableAnimations ?? false);
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light,
+      child: Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: RefreshIndicator(
+          color: AppColors.fab,
+          onRefresh: () async {
+            ref.invalidate(_dailyReportProvider);
+            ref.invalidate(_lowStockProvider);
+          },
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics(),
+            ),
+            slivers: [
+              if (business == null)
+                const SliverFillRemaining(
+                  child: KumbaEmptyState(title: 'Aucun commerce'),
+                )
+              else
+                SliverPadding(
+                  padding: EdgeInsets.fromLTRB(16, 8, 16, bottomPad),
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate([
+                      KumbaReveal(
+                        order: 1,
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: _SceneCard(
+                                title: S.tr('Vendre', 'Sell'),
+                                caption: S.tr(
+                                  'Ouvrir la caisse',
+                                  'Open checkout',
+                                ),
+                                color: AppColors.fab,
+                                shadow: AppColors.fab,
+                                ornament: PhosphorIconsFill.cashRegister,
+                                cta: PhosphorIconsBold.arrowRight,
+                                ctaFilled: true,
+                                // Encre sombre sur orange : ratio 8,28:1 (WCAG AAA).
+                                onColor: AppColors.onPrimary,
+                                onTap: () => context.go('/vente'),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _SceneCard(
+                                title: S.tr('Encaisser', 'Collect'),
+                                caption: S.tr(
+                                  'Dettes et acomptes',
+                                  'Debts and deposits',
+                                ),
+                                color: AppColors.collectEnd,
+                                shadow: AppColors.collectEnd,
+                                ornament: PhosphorIconsFill.wallet,
+                                cta: PhosphorIconsBold.arrowRight,
+                                ctaFilled: false,
+                                onTap: () => context.push('/debts'),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      reportAsync.when(
+                        loading: () => const SizedBox.shrink(),
+                        error: (_, __) => const SizedBox.shrink(),
+                        data: (r) => _briefOpen
+                            ? KumbaReveal(
+                                order: 2,
+                                child: _LynkDayBrief(
+                                  role: session.role,
+                                  salesCount: r.salesCount,
+                                  lowStock: lowStockAsync.valueOrNull ?? 0,
+                                  reduce: reduce,
+                                ),
+                              )
+                            : const SizedBox.shrink(),
+                      ),
+                      const SizedBox(height: 14),
+                      reportAsync.when(
+                        loading: () =>
+                            const SizedBox(height: 160, child: KumbaLoading()),
+                        error: (e, _) => KumbaErrorState(
+                          message: userFacingErrorMessage(
+                            e,
+                            fallback: S.tr(
+                              'Les chiffres du jour sont momentanément indisponibles.',
+                              'Today’s figures are temporarily unavailable.',
+                            ),
+                          ),
+                          onRetry: () => ref.invalidate(_dailyReportProvider),
+                        ),
+                        data: (r) => KumbaReveal(
+                          order: 3,
+                          child: Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              Column(
+                                children: [
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: _KpiCard(
+                                          label: S.tr('Ventes', 'Sales'),
+                                          value: MoneyFormat.formatCompact(
+                                            r.sold,
+                                          ),
+                                          caption:
+                                              '${r.salesCount} vente${r.salesCount > 1 ? 's' : ''}',
+                                          bg: AppColors.kpiSalesBg,
+                                          accent: AppColors.kpiSales,
+                                          icon: PhosphorIconsFill.chartLineUp,
+                                          // spark désactivée : la courbe était
+                                          // une décoration constante sans données
+                                          // réelles — elle suggérait une tendance
+                                          // inexistante dans un outil financier.
+                                          spark: false,
+                                          onTap: () => context.go('/sales'),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: _KpiCard(
+                                          label: S.tr('Encaissé', 'Collected'),
+                                          value: MoneyFormat.formatCompact(
+                                            r.collected,
+                                          ),
+                                          caption: S.tr('du jour', 'today'),
+                                          bg: AppColors.kpiCollectBg,
+                                          accent: AppColors.kpiCollect,
+                                          icon: PhosphorIconsFill.coins,
+                                          onTap: () => context.push('/reports'),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: _KpiCard(
+                                          label: S.tr('Dettes', 'Debts'),
+                                          value: MoneyFormat.formatCompact(
+                                            r.credit,
+                                          ),
+                                          caption: S.tr(
+                                            'à recouvrer',
+                                            'to collect',
+                                          ),
+                                          bg: AppColors.kpiDebtBg,
+                                          accent: AppColors.kpiDebt,
+                                          icon: PhosphorIconsFill.users,
+                                          onTap: () => context.push('/debts'),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: _KpiCard(
+                                          label: S.tr('Acomptes', 'Deposits'),
+                                          value: MoneyFormat.formatCompact(
+                                            r.partialPaymentsCount.toDouble(),
+                                          ),
+                                          caption: r.partialPaymentsCount == 0
+                                              ? S.tr(
+                                                  'Aucun acompte',
+                                                  'No deposit',
+                                                )
+                                              : '${r.partialPaymentsCount} '
+                                                  'paiement${r.partialPaymentsCount > 1 ? 's' : ''} '
+                                                  'partiel${r.partialPaymentsCount > 1 ? 's' : ''}',
+                                          bg: AppColors.kpiDepositBg,
+                                          accent: AppColors.kpiDeposit,
+                                          icon: PhosphorIconsFill.calendarCheck,
+                                          onTap: () => context.push('/debts'),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                              Positioned(
+                                right: 4,
+                                top: -18,
+                                child: KumbaPressable(
+                                  onTap: () =>
+                                      setState(() => _briefOpen = !_briefOpen),
+                                  child: Container(
+                                    width: 40,
+                                    height: 40,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: AppColors.fab.withValues(
+                                          alpha: 0.18,
+                                        ),
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: AppColors.dock.withValues(
+                                            alpha: 0.10,
+                                          ),
+                                          blurRadius: 12,
+                                          offset: const Offset(0, 4),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Icon(
+                                      _briefOpen
+                                          ? PhosphorIconsBold.caretUp
+                                          : PhosphorIconsBold.caretDown,
+                                      color: AppColors.fab,
+                                      size: 16,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 22),
+                      KumbaSectionTitle(S.tr('Raccourcis', 'Shortcuts')),
+                      Wrap(
+                        spacing: 10,
+                        runSpacing: 10,
+                        children: [
+                          _ShortcutChip(
+                            icon: PhosphorIconsFill.users,
+                            label: 'Clients',
+                            color: AppColors.kpiCollect,
+                            onTap: () => context.push('/customers'),
+                          ),
+                          _ShortcutChip(
+                            icon: PhosphorIconsFill.package,
+                            label: 'Stock',
+                            color: AppColors.kpiSales,
+                            onTap: () => context.go('/stock'),
+                          ),
+                          _ShortcutChip(
+                            icon: PhosphorIconsFill.tag,
+                            label: 'Produits',
+                            color: AppColors.fab,
+                            onTap: () => context.push('/products'),
+                          ),
+                          _ShortcutChip(
+                            icon: PhosphorIconsFill.chartBar,
+                            label: 'Rapports',
+                            color: AppColors.lynkViolet,
+                            onTap: () => context.push('/reports'),
+                          ),
+                        ],
+                      ),
+                    ]),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SceneCard extends StatelessWidget {
+  const _SceneCard({
+    required this.title,
+    required this.caption,
+    required this.color,
+    required this.shadow,
+    required this.ornament,
+    required this.cta,
+    required this.ctaFilled,
+    required this.onTap,
+    // Couleur du texte sur le fond coloré.
+    // Doit respecter WCAG AA (≥ 4,5:1) avec `color`.
+    // Blanc sur violet (#5A22E0) = ~9:1 ✓ ; blanc sur orange (#FF9800) = 2,16:1 ✗.
+    this.onColor = Colors.white,
+  });
+
+  final String title;
+  final String caption;
+  final Color color;
+  final Color shadow;
+  final IconData ornament;
+  final IconData cta;
+  final bool ctaFilled;
+  final VoidCallback onTap;
+  final Color onColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return KumbaPressable(
+      scale: AppMotion.pressScaleStrong,
+      onTap: onTap,
+      child: Container(
+        height: 156,
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(26),
+          boxShadow: AppColors.tintedShadow(shadow),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          children: [
+            Positioned(
+              left: 0,
+              right: 0,
+              top: 0,
+              height: 1,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.28),
+                ),
+              ),
+            ),
+            Positioned(
+              right: -18,
+              bottom: -22,
+              child: KumbaSceneOrnament(icon: ornament, size: 132),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 14, 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      color: onColor,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -0.5,
+                      height: 1.1,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    caption,
+                    style: TextStyle(
+                      color: onColor.withValues(alpha: 0.78),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      height: 1.3,
+                    ),
+                  ),
+                  const Spacer(),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: KumbaCtaDisk(icon: cta, filled: ctaFilled),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LynkDayBrief extends StatelessWidget {
+  const _LynkDayBrief({
+    required this.role,
+    required this.salesCount,
+    required this.lowStock,
+    required this.reduce,
+  });
+
+  final String role;
+  final int salesCount;
+  final int lowStock;
+  final bool reduce;
+
+  @override
+  Widget build(BuildContext context) {
+    final parsed = RolePermissions.parseRole(role);
+    late final String message;
+    late final String prompt;
+    switch (parsed) {
+      case AppRole.stockManager:
+        message = S.tr(
+          lowStock == 0
+              ? 'Stock calme aujourd’hui. Dis-moi si tu veux un point valeur.'
+              : '$lowStock article(s) sous le seuil — je peux prioriser le réappro.',
+          lowStock == 0
+              ? 'Stock looks calm today. Ask me for a value check if you want.'
+              : '$lowStock item(s) below threshold — I can prioritize restock.',
+        );
+        prompt = S.tr(
+          'Que dois-je réapprovisionner en priorité ?',
+          'What should I restock first?',
+        );
+      case AppRole.accountant:
+        message = S.tr(
+          'Priorité finance : encaissements vs dépenses. Je peux te résumer la journée.',
+          'Finance focus: collections vs expenses. I can summarize the day.',
+        );
+        prompt = S.tr(
+          'Résume encaissements et dépenses du jour.',
+          'Summarize today’s collections and expenses.',
+        );
+      case AppRole.seller:
+        message = S.tr(
+          salesCount == 0
+              ? 'Voici ta journée : caisse prête, pas encore de vente.'
+              : '$salesCount vente(s) aujourd’hui. Je peux te donner le total.',
+          salesCount == 0
+              ? 'Your day: till ready, no sales yet.'
+              : '$salesCount sale(s) today. I can give you the total.',
+        );
+        prompt = S.tr(
+          'Quel est mon chiffre d’affaires aujourd’hui ?',
+          'What is my revenue today?',
+        );
+      default:
+        message = S.tr(
+          salesCount == 0
+              ? 'Voici ta journée : caisse prête, pas encore de vente.'
+              : '$salesCount vente(s) enregistrée(s). Je peux résumer.',
+          salesCount == 0
+              ? 'Your day: till ready, no sales yet.'
+              : '$salesCount sale(s) recorded. I can summarize.',
+        );
+        prompt = S.tr('Résume mes ventes du jour', 'Summarize today’s sales');
+    }
+
+    return KumbaPressable(
+      onTap: () {
+        ProviderScope.containerOf(
+          context,
+        ).read(pendingAiPromptProvider.notifier).state = prompt;
+        context.push('/ai');
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(
+            color: AppColors.lynkViolet.withValues(alpha: 0.10),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.dock.withValues(alpha: 0.06),
+              blurRadius: 18,
+              offset: const Offset(0, 8),
+              spreadRadius: -8,
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            LynkAvatar(size: 56, mood: LynkMood.greeting, enabled: !reduce),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(
+                        PhosphorIconsFill.star,
+                        size: 12,
+                        color: AppColors.lynkStar,
+                      ),
+                      const SizedBox(width: 5),
+                      Expanded(
+                        child: Text(
+                          S.tr('Lynk · priorité du jour', 'Lynk · today’s focus'),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: AppColors.lynkViolet,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                            letterSpacing: 0.1,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    message,
+                    style: const TextStyle(
+                      color: AppColors.ink,
+                      fontSize: 14,
+                      height: 1.4,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    S.tr('Demander à Lynk', 'Ask Lynk'),
+                    style: const TextStyle(
+                      color: AppColors.lynkViolet,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            const KumbaIconWell(
+              icon: PhosphorIconsRegular.listChecks,
+              color: AppColors.lynkViolet,
+              size: 44,
+              iconSize: 20,
+              radius: 14,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _KpiCard extends StatelessWidget {
+  const _KpiCard({
+    required this.label,
+    required this.value,
+    required this.caption,
+    required this.bg,
+    required this.accent,
+    required this.icon,
+    required this.onTap,
+    this.spark = false,
+  });
+
+  final String label;
+  final String value;
+  final String caption;
+  final Color bg;
+  final Color accent;
+  final IconData icon;
+  final VoidCallback onTap;
+  final bool spark;
+
+  @override
+  Widget build(BuildContext context) {
+    return KumbaPressable(
+      onTap: onTap,
+      child: Container(
+        height: 124,
+        padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: accent.withValues(alpha: 0.10)),
+        ),
+        child: Stack(
+          children: [
+            if (spark)
+              const Positioned(
+                right: 2,
+                bottom: 6,
+                child: KumbaSparkline(
+                  color: AppColors.kpiSales,
+                  width: 58,
+                  height: 26,
+                ),
+              ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    KumbaIconWell(
+                      icon: icon,
+                      color: accent,
+                      size: 28,
+                      iconSize: 14,
+                      radius: 9,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        label,
+                        style: TextStyle(
+                          color: accent,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const Spacer(),
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: accent,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.6,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  caption,
+                  style: const TextStyle(
+                    // inkMuted (#64748B) sur fonds KPI clairs : ratio ~4,6:1 → WCAG AA.
+                    // inkFaint (#8B95A7) était à ~2,85:1 — insuffisant pour 11 sp.
+                    color: AppColors.inkMuted,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ShortcutChip extends StatelessWidget {
+  const _ShortcutChip({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return KumbaPressable(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(10, 8, 14, 8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: AppColors.dock.withValues(alpha: 0.06)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            KumbaIconWell(
+              icon: icon,
+              color: color,
+              size: 26,
+              iconSize: 13,
+              radius: 8,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+                color: AppColors.ink,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

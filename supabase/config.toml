@@ -1,0 +1,28 @@
+# Supabase local / CLI — Lynkstor Business
+# https://supabase.com/docs/guides/cli/config
+
+project_id = "lynkstor-business"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+major_version = 15
+
+[studio]
+enabled = true
+port = 54323
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+
+# API gateway unique (auth + admin + sync + webhook)
+# verify_jwt = false : on utilise ADMIN_API_KEY / SYNC_API_KEY applicatifs
+[functions.lynkstor-api]
+verify_jwt = false

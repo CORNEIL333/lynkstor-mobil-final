@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lynkstor — Administration</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;650;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="styles.css">
+  <!-- config.js définit window.LYNKSTOR_API_BASE (Supabase / Cloudflare) -->
+  <script src="config.js"></script>
+</head>
+<body>
+  <div id="login-gate" class="login-gate" aria-hidden="true">
+    <div class="login-card">
+      <div class="login-brand">
+        <img src="/lynkstor_logo_dark.png" alt="Lynkstor" width="44" height="44"
+             onerror="this.src='/lynkstor_logo_light.png'">
+        <h2>Lynkstor Admin</h2>
+        <p>Connectez-vous pour continuer</p>
+      </div>
+      <form id="login-form">
+        <div class="form-group">
+          <label for="login-user">Utilisateur</label>
+          <input type="text" id="login-user" class="select-input" autocomplete="username" placeholder="admin">
+        </div>
+        <div class="form-group">
+          <label for="login-pass">Mot de passe</label>
+          <input type="password" id="login-pass" class="select-input" autocomplete="current-password">
+        </div>
+        <div class="login-divider">ou</div>
+        <div class="form-group">
+          <label for="login-token">Clé API</label>
+          <input type="password" id="login-token" class="select-input" placeholder="ADMIN_API_KEY" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label for="login-api-base">URL API backend (si admin séparé)</label>
+          <input type="url" id="login-api-base" class="select-input" placeholder="https://votre-api.onrender.com" autocomplete="off">
+        </div>
+        <p id="login-error" class="login-error" style="display:none;"></p>
+        <button type="submit" class="btn btn-primary" style="width:100%; margin-top:4px;">
+          Se connecter
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <div class="app-layout">
+    <aside class="sidebar" id="app-sidebar">
+      <div class="brand">
+        <img src="/lynkstor_logo_dark.png" alt="Lynkstor"
+             onerror="this.src='/lynkstor_logo_light.png'">
+        <div class="brand-text">
+          <h2>Lynkstor</h2>
+          <p>Console d’administration</p>
+        </div>
+      </div>
+
+      <div class="role-selector-box">
+        <label>Vue interface</label>
+        <select id="active-role-selector" class="select-role-input">
+          <option value="super_admin">Administrateur</option>
+          <option value="supervisor">Superviseur</option>
+          <option value="commercial">Commercial</option>
+        </select>
+      </div>
+
+      <nav class="nav-menu">
+        <a href="#dashboard" class="nav-item active" data-tab="dashboard">
+          <i class="fa-solid fa-chart-simple"></i>
+          <span>Tableau de bord</span>
+        </a>
+        <a href="#map" class="nav-item" data-tab="map">
+          <i class="fa-solid fa-map"></i>
+          <span>Carte</span>
+          <span class="badge" id="gps-active-badge">—</span>
+        </a>
+        <a href="#subscribers" class="nav-item" data-tab="subscribers">
+          <i class="fa-solid fa-file-invoice"></i>
+          <span>Abonnements</span>
+          <span class="badge badge-accent" id="active-subs-badge">—</span>
+        </a>
+        <a href="#staff" class="nav-item admin-only supervisor-only" data-tab="staff">
+          <i class="fa-solid fa-user-group"></i>
+          <span>Équipe</span>
+        </a>
+        <a href="#codes" class="nav-item admin-only supervisor-only" data-tab="codes">
+          <i class="fa-solid fa-key"></i>
+          <span>Codes activation</span>
+        </a>
+        <a href="#users" class="nav-item admin-only" data-tab="users">
+          <i class="fa-solid fa-users"></i>
+          <span>Utilisateurs</span>
+        </a>
+        <a href="#sync" class="nav-item admin-only" data-tab="sync">
+          <i class="fa-solid fa-arrows-rotate"></i>
+          <span>Synchronisation</span>
+        </a>
+        <a href="#trial" class="nav-item admin-only supervisor-only" data-tab="trial">
+          <i class="fa-solid fa-flask"></i>
+          <span>Période test</span>
+        </a>
+        <a href="#settings" class="nav-item" data-tab="settings">
+          <i class="fa-solid fa-gear"></i>
+          <span>Paramètres</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="server-status">
+          <span class="status-dot"></span>
+          <span>Serveur en ligne</span>
+        </div>
+        <div class="user-profile">
+          <div class="avatar" id="user-avatar">SA</div>
+          <div class="user-info">
+            <h4 id="user-display-name">Administrateur</h4>
+            <p id="user-display-role">admin@lynkstor.com</p>
+          </div>
+        </div>
+      </div>
+    </aside>
+    <div class="sidebar-scrim" id="sidebar-scrim" aria-hidden="true"></div>
+
+    <main class="main-content">
+      <header class="mobile-header">
+        <button type="button" class="btn btn-outline" id="btn-mobile-menu"
+                aria-label="Ouvrir le menu de navigation" aria-expanded="false" aria-controls="app-sidebar">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <span class="mobile-brand">Lynkstor</span>
+      </header>
+      <header class="top-header">
+        <div class="header-title">
+          <h1 id="page-title">Tableau de bord</h1>
+          <p id="page-subtitle">Vue d’ensemble des commerces, abonnements et activité terrain.</p>
+        </div>
+        <div class="header-actions">
+          <button type="button" class="btn btn-outline" id="btn-refresh">
+            <i class="fa-solid fa-arrows-rotate"></i> Actualiser
+          </button>
+          <button type="button" class="btn btn-outline" id="btn-logout" title="Déconnexion">
+            <i class="fa-solid fa-right-from-bracket"></i>
+          </button>
+          <button type="button" class="btn btn-primary" id="btn-express-activate">
+            Activer un abonnement
+          </button>
+        </div>
+      </header>
+
+      <!-- Dashboard -->
+      <section id="tab-dashboard" class="tab-page active">
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <span class="kpi-label">Chiffre d’affaires</span>
+            <div class="kpi-value" id="kpi-sales">—</div>
+            <span class="kpi-meta">Total agrégé (FCFA)</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-label">Abonnements actifs</span>
+            <div class="kpi-value" id="kpi-subs">—</div>
+            <span class="kpi-meta">Actifs / commerces</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-label">Encaissements terrain</span>
+            <div class="kpi-value" id="kpi-field-collections">—</div>
+            <span class="kpi-meta">Collectes agents (FCFA)</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-label">Clés d’activation</span>
+            <div class="kpi-value" id="kpi-codes">—</div>
+            <span class="kpi-meta" id="kpi-codes-meta">Disponibles / Utilisées</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-label">Événements sync</span>
+            <div class="kpi-value" id="kpi-sync">—</div>
+            <span class="kpi-meta">Journal d’ingestion</span>
+          </div>
+        </div>
+
+        <div class="dashboard-row">
+          <div class="card">
+            <div class="card-header">
+              <h3>Volume des ventes</h3>
+              <p class="card-subtitle">Aperçu basé sur le total agrégé en base</p>
+            </div>
+            <div class="card-body">
+              <canvas id="salesChart" height="240"></canvas>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <h3>Activité terrain récente</h3>
+              <p class="card-subtitle">Dernières activations et collectes</p>
+            </div>
+            <div class="card-body">
+              <div class="recent-list" id="field-activity-list"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Map -->
+      <section id="tab-map" class="tab-page">
+        <div class="card">
+          <div class="card-header table-header">
+            <div>
+              <h3>Carte des commerces et agents</h3>
+              <p class="card-subtitle">Statut d’abonnement et dernière position GPS connue</p>
+            </div>
+            <div class="table-actions">
+              <button type="button" class="btn btn-outline btn-sm" id="btn-recenter-map">
+                Recentrer
+              </button>
+            </div>
+          </div>
+          <div class="card-body padding-none">
+            <div id="map-container"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Subscribers -->
+      <section id="tab-subscribers" class="tab-page">
+        <div class="card">
+          <div class="card-header table-header">
+            <div>
+              <h3>Abonnements</h3>
+              <p class="card-subtitle">Forfaits, statuts et dates d’expiration</p>
+            </div>
+            <div class="table-actions">
+              <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="search-subscribers" placeholder="Rechercher…">
+              </div>
+              <select id="filter-plan" class="select-input" style="width:auto;">
+                <option value="ALL">Tous les forfaits</option>
+                <option value="PRO">PRO</option>
+                <option value="ENTERPRISE">ENTERPRISE</option>
+                <option value="STARTER">STARTER</option>
+                <option value="GRATUIT">Essai / gratuit</option>
+              </select>
+            </div>
+          </div>
+          <div class="card-body padding-none">
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Commerce</th>
+                    <th>Contact</th>
+                    <th>Forfait</th>
+                    <th>Statut</th>
+                    <th>Tarif</th>
+                    <th>Expiration</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="subscribers-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Staff -->
+      <section id="tab-staff" class="tab-page">
+        <div class="card">
+          <div class="card-header table-header">
+            <div>
+              <h3>Équipe terrain</h3>
+              <p class="card-subtitle">Commerciaux, superviseurs et collectes</p>
+            </div>
+            <button type="button" class="btn btn-primary btn-sm" id="btn-add-staff">
+              Ajouter un agent
+            </button>
+          </div>
+          <div class="card-body padding-none">
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Nom</th>
+                    <th>Téléphone</th>
+                    <th>Rôle</th>
+                    <th>Statut</th>
+                    <th>Activations</th>
+                    <th>Encaissé</th>
+                    <th>Dernier ping</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="staff-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Codes activation agent -->
+      <section id="tab-codes" class="tab-page">
+        <div class="card">
+          <div class="card-header table-header">
+            <div>
+              <h3>Codes d’activation app mobile</h3>
+              <p class="card-subtitle">
+                Un client ne peut créer un commerce cloud qu’avec un code fourni par un agent.
+                La démo locale n’apparaît pas dans Supabase.
+              </p>
+            </div>
+            <button type="button" class="btn btn-primary btn-sm" id="btn-generate-codes">
+              Générer des codes
+            </button>
+          </div>
+          <div class="card-body padding-none">
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Clé d’activation</th>
+                    <th>Commercial attribué</th>
+                    <th>Forfait</th>
+                    <th>Boutique prévue</th>
+                    <th>Statut</th>
+                    <th>Commerce activé</th>
+                    <th>Date d’activation</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="codes-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Users -->
+      <section id="tab-users" class="tab-page">
+        <div class="card">
+          <div class="card-header table-header">
+            <div>
+              <h3>Utilisateurs clients</h3>
+              <p class="card-subtitle">Comptes rattachés aux commerces</p>
+            </div>
+            <div class="search-box">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="search-users" placeholder="Rechercher…">
+            </div>
+          </div>
+          <div class="card-body padding-none">
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Utilisateur</th>
+                    <th>Commerce</th>
+                    <th>Téléphone</th>
+                    <th>Rôle</th>
+                    <th>Abonnement</th>
+                    <th>Statut</th>
+                  </tr>
+                </thead>
+                <tbody id="users-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Sync -->
+      <section id="tab-sync" class="tab-page">
+        <div class="card">
+          <div class="card-header">
+            <h3>Journal de synchronisation</h3>
+            <p class="card-subtitle">Événements reçus depuis les applications mobiles</p>
+          </div>
+          <div class="card-body padding-none">
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Commerce</th>
+                    <th>Type</th>
+                    <th>Entité</th>
+                    <th>Opération</th>
+                    <th>Reçu le</th>
+                  </tr>
+                </thead>
+                <tbody id="sync-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="tab-trial" class="tab-page">
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <span class="kpi-label">Boutiques test</span>
+            <div class="kpi-value" id="trial-installs">—</div>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-label">Événements</span>
+            <div class="kpi-value" id="trial-events">—</div>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-label">Ventes</span>
+            <div class="kpi-value" id="trial-sales">—</div>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-label">CA test (FCFA)</span>
+            <div class="kpi-value" id="trial-sold">—</div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:16px;">
+          <div class="card-header">
+            <h3>Boutiques du panel</h3>
+            <button type="button" class="btn btn-outline btn-sm" id="btn-export-trial">Exporter JSON</button>
+          </div>
+          <div class="card-body padding-none">
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Installation</th>
+                    <th>Secteur</th>
+                    <th>Ventes</th>
+                    <th>CA</th>
+                    <th>Produits activés</th>
+                    <th>Jours ouverts</th>
+                    <th>Dernier envoi</th>
+                  </tr>
+                </thead>
+                <tbody id="trial-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Settings -->
+      <section id="tab-settings" class="tab-page">
+        <div class="card">
+          <div class="card-header">
+            <h3>Paramètres de connexion</h3>
+            <p class="card-subtitle">Endpoints pour l’application mobile et clé API locale</p>
+          </div>
+          <div class="card-body">
+            <div class="config-box">
+              <label>URL sync push</label>
+              <div class="copy-input">
+                <input type="text" id="server-url-display" readonly value="">
+                <button type="button" class="btn btn-outline" id="btn-copy-url">Copier</button>
+              </div>
+              <p class="help-text">
+                Dans l’app : Paramètres → Serveur de synchronisation HTTP.
+                Header : <code>Authorization: Bearer …</code>
+              </p>
+            </div>
+            <div class="config-box">
+              <label>URL sync pull</label>
+              <div class="copy-input">
+                <input type="text" id="server-pull-url-display" readonly value="">
+              </div>
+            </div>
+            <div class="config-box">
+              <label>URL de l’API backend</label>
+              <input type="text" id="api-base-display" class="select-input" readonly value="">
+              <label style="margin-top:8px;">Changer l’URL API (Cloudflare → Render)</label>
+              <div class="copy-input">
+                <input type="url" id="api-base-input" class="select-input" placeholder="https://votre-api.onrender.com">
+                <button type="button" class="btn btn-primary" id="btn-save-api-base">Enregistrer</button>
+              </div>
+              <p class="help-text">Laisser vide si le site admin est servi par le même serveur Node.</p>
+            </div>
+            <div class="config-box">
+              <label>Token enregistré</label>
+              <input type="text" id="api-token-display" class="select-input" readonly value="">
+              <label style="margin-top:8px;">Nouvelle clé API</label>
+              <div class="copy-input">
+                <input type="password" id="api-token-input" class="select-input" placeholder="Coller ADMIN_API_KEY">
+                <button type="button" class="btn btn-primary" id="btn-save-token">Enregistrer</button>
+              </div>
+              <p class="help-text">Jeton conservé uniquement pour l’onglet courant (<code>sessionStorage</code>).</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Modal: activation -->
+  <div class="modal-overlay" id="modal-express-activate">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Activer un abonnement</h3>
+        <button type="button" class="close-modal" aria-label="Fermer">&times;</button>
+      </div>
+      <form id="form-express-activate">
+        <div class="form-group">
+          <label>Commerce</label>
+          <select id="express-business-select" class="select-input" required></select>
+        </div>
+        <div class="form-group">
+          <label>Agent commercial</label>
+          <select id="express-staff-select" class="select-input" required></select>
+        </div>
+        <div class="form-group">
+          <label>Forfait</label>
+          <select id="express-plan-select" class="select-input">
+            <option value="PRO (Mensuel)">PRO — 15 000 FCFA / mois</option>
+            <option value="STARTER">STARTER — 5 000 FCFA / mois</option>
+            <option value="ENTERPRISE (Annuel)">ENTERPRISE — 150 000 FCFA / an</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Montant encaissé (FCFA)</label>
+          <input type="number" id="express-price-input" value="15000" class="select-input" required>
+        </div>
+        <div class="form-group">
+          <label>Durée (mois)</label>
+          <select id="express-duration-select" class="select-input">
+            <option value="1">1 mois</option>
+            <option value="3">3 mois</option>
+            <option value="6">6 mois</option>
+            <option value="12">12 mois</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Notes (optionnel)</label>
+          <input type="text" id="express-notes-input" class="select-input" placeholder="Référence de paiement, remarque…">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline close-modal">Annuler</button>
+          <button type="submit" class="btn btn-primary">Confirmer l’activation</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: edit sub -->
+  <div class="modal-overlay" id="modal-edit-sub">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Modifier l’abonnement</h3>
+        <button type="button" class="close-modal" aria-label="Fermer">&times;</button>
+      </div>
+      <form id="form-edit-sub">
+        <input type="hidden" id="edit-sub-id">
+        <div class="form-group">
+          <label>Commerce</label>
+          <input type="text" id="edit-sub-business" readonly class="input-readonly">
+        </div>
+        <div class="form-group">
+          <label>Forfait</label>
+          <select id="edit-sub-plan" class="select-input">
+            <option value="GRATUIT (Essai)">Essai gratuit</option>
+            <option value="STARTER">STARTER</option>
+            <option value="PRO (Mensuel)">PRO</option>
+            <option value="ENTERPRISE (Annuel)">ENTERPRISE</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Prix (FCFA)</label>
+          <input type="number" id="edit-sub-price" class="select-input">
+        </div>
+        <div class="form-group">
+          <label>Statut</label>
+          <select id="edit-sub-status" class="select-input">
+            <option value="active">Actif</option>
+            <option value="expired">Expiré</option>
+            <option value="suspended">Suspendu</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Date d’expiration</label>
+          <input type="date" id="edit-sub-expires" class="select-input">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline close-modal">Annuler</button>
+          <button type="submit" class="btn btn-primary">Enregistrer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: generate activation codes -->
+  <div class="modal-overlay" id="modal-generate-codes">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Générer des codes agent</h3>
+        <button type="button" class="close-modal" aria-label="Fermer">&times;</button>
+      </div>
+      <form id="form-generate-codes">
+        <div class="form-group">
+          <label>Agent commercial</label>
+          <select id="code-staff-select" class="select-input" required></select>
+        </div>
+        <div class="form-group">
+          <label>Forfait</label>
+          <select id="code-plan-select" class="select-input">
+            <option value="STARTER">STARTER</option>
+            <option value="PRO (Mensuel)">PRO</option>
+            <option value="ENTERPRISE (Annuel)">ENTERPRISE</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Nombre de codes</label>
+          <input type="number" id="code-count-input" class="select-input" value="3" min="1" max="20">
+        </div>
+        <div class="form-group">
+          <label>Validité (jours)</label>
+          <input type="number" id="code-expires-input" class="select-input" value="30" min="1" max="365">
+        </div>
+        <div class="form-group">
+          <label>Notes</label>
+          <input type="text" id="code-notes-input" class="select-input" placeholder="Campagne Abidjan…">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline close-modal">Annuler</button>
+          <button type="submit" class="btn btn-primary">Générer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: add staff -->
+  <div class="modal-overlay" id="modal-add-staff">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Nouvel agent</h3>
+        <button type="button" class="close-modal" aria-label="Fermer">&times;</button>
+      </div>
+      <form id="form-add-staff">
+        <div class="form-group">
+          <label>Nom complet</label>
+          <input type="text" id="staff-name-input" class="select-input" required placeholder="Nom et prénom">
+        </div>
+        <div class="form-group">
+          <label>Identifiant (Nom d’utilisateur pour connexion Web)</label>
+          <input type="text" id="staff-username-input" class="select-input" required placeholder="ex: kone, bamba, agent01">
+        </div>
+        <div class="form-group">
+          <label>Mot de passe de connexion</label>
+          <input type="password" id="staff-password-input" class="select-input" required placeholder="Mot de passe du compte">
+        </div>
+        <div class="form-group">
+          <label>E-mail</label>
+          <input type="email" id="staff-email-input" class="select-input" required placeholder="agent@lynkstor.com">
+        </div>
+        <div class="form-group">
+          <label>Téléphone</label>
+          <input type="text" id="staff-phone-input" class="select-input" required placeholder="+225 …">
+        </div>
+        <div class="form-group">
+          <label>Rôle</label>
+          <select id="staff-role-select" class="select-input">
+            <option value="commercial">Commercial</option>
+            <option value="supervisor">Superviseur</option>
+            <option value="super_admin">Administrateur</option>
+          </select>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline close-modal">Annuler</button>
+          <button type="submit" class="btn btn-primary">Créer le compte</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>

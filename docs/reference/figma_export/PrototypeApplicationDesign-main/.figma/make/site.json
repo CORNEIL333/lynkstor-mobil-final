@@ -1,0 +1,10 @@
+{
+  "description": "Analyzes project files to automatically generate and prototype application designs, streamlining the UI/UX development process for designers and developers.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

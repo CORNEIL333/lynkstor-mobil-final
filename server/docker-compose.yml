@@ -1,0 +1,23 @@
+# Déploiement local type production (API + admin sur le même port)
+services:
+  lynkstor-api:
+    build: .
+    ports:
+      - "${PORT:-8080}:8080"
+    environment:
+      NODE_ENV: production
+      PORT: 8080
+      DATA_DIR: /app/data
+      ADMIN_API_KEY: ${ADMIN_API_KEY:?set ADMIN_API_KEY}
+      ADMIN_USER: ${ADMIN_USER:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?set ADMIN_PASSWORD}
+      WEBHOOK_SECRET: ${WEBHOOK_SECRET:?set WEBHOOK_SECRET}
+      SYNC_API_KEY: ${SYNC_API_KEY:-}
+      CORS_ORIGIN: ${CORS_ORIGIN:-}
+    volumes:
+      # Persiste la SQLite hors du conteneur
+      - lynkstor_data:/app/data
+    restart: unless-stopped
+
+volumes:
+  lynkstor_data:

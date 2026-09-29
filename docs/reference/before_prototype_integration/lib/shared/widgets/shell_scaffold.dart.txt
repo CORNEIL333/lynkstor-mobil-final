@@ -1,0 +1,136 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+import 'package:phosphor_flutter/phosphor_flutter.dart';
+
+import '../../app/providers.dart';
+import '../../core/permissions/permissions.dart';
+import '../../core/theme/app_colors.dart';
+import '../../design_system/components/kumba_ios.dart';
+import '../../design_system/components/kumba_nav_bar.dart';
+import '../../design_system/components/kumba_states.dart';
+import '../../design_system/components/kumba_subscription_banner.dart';
+import '../../design_system/motion/lynk_avatar.dart';
+import '../../features/ai_assistant/lynk_quick_sheet.dart';
+import '../../l10n/app_strings.dart';
+
+class ShellScaffold extends ConsumerWidget {
+  const ShellScaffold({super.key, required this.child});
+
+  final Widget child;
+
+  int _indexFromLocation(String location) {
+    if (location.startsWith('/home')) return 0;
+    if (location.startsWith('/sales') ||
+        location.startsWith('/stock') ||
+        location.startsWith('/invoices')) {
+      return 1;
+    }
+    if (location.startsWith('/ai')) return 2;
+    if (location.startsWith('/more')) return 3;
+    return 0;
+  }
+
+  _WorkTab _workTab(SessionState session) {
+    final role = RolePermissions.parseRole(session.role);
+    if (role == AppRole.stockManager) {
+      return const _WorkTab(
+        path: '/stock',
+        icon: PhosphorIconsRegular.package,
+        active: PhosphorIconsFill.package,
+        labelKey: 'Stock',
+      );
+    }
+    return _WorkTab(
+      path: '/sales',
+      icon: PhosphorIconsRegular.chartBar,
+      active: PhosphorIconsFill.chartBar,
+      labelKey: S.sales,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final location = GoRouterState.of(context).uri.toString();
+    final index = _indexFromLocation(location);
+    final session = ref.watch(sessionProvider);
+    final performanceMode = session.performanceMode;
+    final onlineAsync = ref.watch(connectivityOnlineProvider);
+    final pendingAsync = ref.watch(pendingSyncCountProvider);
+    final isOnline = onlineAsync.valueOrNull ?? true;
+    final pending = pendingAsync.valueOrNull ?? 0;
+    final work = _workTab(session);
+    final canSell = session.can(AppPermission.salesCreate) && session.canSell;
+    final reduce =
+        performanceMode ||
+        (MediaQuery.maybeOf(context)?.disableAnimations ?? false);
+
+    return KumbaMeshBackground(
+      performanceMode: performanceMode,
+      child: Scaffold(
+        backgroundColor: AppColors.pageBg,
+        body: Column(
+          children: [
+            if (!isOnline) KumbaOfflineBanner(pendingCount: pending),
+            const KumbaSubscriptionBanner(),
+            Expanded(child: child),
+          ],
+        ),
+        extendBody: false,
+        bottomNavigationBar: KumbaFloatingNavBar(
+          currentIndex: index,
+          performanceMode: performanceMode,
+          items: KumbaFloatingNavBar.itemsFor(
+            tab2Icon: work.icon,
+            tab2Active: work.active,
+            tab2Label: S.auto(work.labelKey),
+            tab3Glyph: LynkAvatar(
+              size: 28,
+              enabled: !reduce,
+              mood: index == 2 ? LynkMood.replying : LynkMood.idle,
+            ),
+          ),
+          onTap: (i) {
+            switch (i) {
+              case 0:
+                context.go('/home');
+              case 1:
+                context.go(work.path);
+              case 2:
+                if (location.startsWith('/ai')) return;
+                showLynkQuickSheet(context);
+              case 3:
+                context.go('/more');
+            }
+          },
+          onLongPress: (i) {
+            if (i == 2) context.go('/ai');
+          },
+          onCenterTap: () {
+            if (canSell) {
+              context.push('/sale/new');
+            } else {
+              context.go(work.path);
+            }
+          },
+          centerIcon: canSell ? PhosphorIconsFill.cashRegister : work.active,
+        ),
+      ),
+    );
+  }
+}
+
+class _WorkTab {
+  const _WorkTab({
+    required this.path,
+    required this.icon,
+    required this.active,
+    required this.labelKey,
+  });
+
+  final String path;
+  final IconData icon;
+  final IconData active;
+  final String labelKey;
+}

@@ -1,0 +1,17 @@
+{
+  "name": "sweet-bush-a7e8",
+  "main": "worker.mjs",
+  "compatibility_date": "2026-07-29",
+  "workers_dev": true,
+  "ai": {
+    "binding": "AI"
+  },
+  "vars": {
+    "AI_ACCESS_KEY": "43e2f38f774d73bf91f4f8a8c52db248"
+  },
+  "assets": {
+    "directory": "./dist",
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "404-page"
+  }
+}

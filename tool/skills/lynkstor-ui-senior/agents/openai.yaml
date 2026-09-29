@@ -1,0 +1,4 @@
+interface:
+  display_name: "Lynkstor UI senior"
+  short_description: "Audit et finition UI/UX Flutter fondés sur des preuves"
+  default_prompt: "Utilise $lynkstor-ui-senior pour améliorer l'interface Lynkstor, préserver les parcours métier et vérifier le résultat visuel et fonctionnel."

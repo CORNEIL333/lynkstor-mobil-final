@@ -1,0 +1,39 @@
+{
+  "name": "figma-make-app",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "preview": "vite preview",
+    "format": "oxfmt",
+    "test:ui": "vitest run",
+    "test:catalogues": "node --test scripts/import-catalogues.test.mjs",
+    "test:tenant-catalogue": "node --experimental-strip-types --test scripts/tenant-catalogue.test.ts",
+    "catalogues:import": "node scripts/import-catalogues.mjs",
+    "catalogues:perfumery": "node scripts/create-perfumery-catalogue.mjs",
+    "catalogues:electronics": "node scripts/create-electronics-catalogue.mjs"
+  },
+  "dependencies": {
+    "lucide-react": "^1.27.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.0.0",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.7",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^6.0.0",
+    "jsdom": "^30.0.1",
+    "oxfmt": "^0.2.0",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.7.0",
+    "vite": "^8.0.0",
+    "vitest": "^5.0.0"
+  }
+}
