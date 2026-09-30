@@ -37,4 +37,6 @@ déploiement avant d'exécuter Wrangler.
 
 URL de production :
 
-`https://sweet-bush-a7e8.davexcoporate.workers.dev/`
+`https://sweet-bush-a7e8.wosee-connect.workers.dev/`
+
+Sonde IA publique (sans coût) : `.../ai/health`
