@@ -7,6 +7,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../app/providers.dart';
 import '../../core/config/app_config.dart';
+import '../../core/errors/app_exception.dart';
 import '../../core/l10n/locale_controller.dart';
 import '../../core/permissions/permissions.dart';
 import '../../core/theme/app_colors.dart';
@@ -808,20 +809,42 @@ class SettingsScreen extends ConsumerWidget {
         ),
         title: Text(S.tr('Invitation employé', 'Employee invitation')),
         subtitle: Text(
-          S.tr('Code à usage unique (7 jours)', 'Single-use code (7 days)'),
+          S.tr(
+            'Code à usage unique (7 jours), multi-postes cloud',
+            'Single-use code (7 days), cloud multi-device',
+          ),
         ),
         trailing: Icon(
           Icons.chevron_right_rounded,
           color: Theme.of(context).colorScheme.outline,
         ),
         onTap: () async {
-          final code = await ref
-              .read(invitationServiceProvider)
-              .createInvitation(
-                businessId: session.business!.id,
-                role: 'seller',
-                createdBy: session.user?.id,
-              );
+          String code;
+          try {
+            code = await ref
+                .read(invitationServiceProvider)
+                .createInvitation(
+                  businessId: session.business!.id,
+                  role: 'seller',
+                  createdBy: session.user?.id,
+                );
+          } on AppException catch (e) {
+            if (!context.mounted) return;
+            showDialog<void>(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: Text(S.tr('Invitation impossible', 'Invite failed')),
+                content: Text(e.message),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text('OK'),
+                  ),
+                ],
+              ),
+            );
+            return;
+          }
           if (!context.mounted) return;
           await Clipboard.setData(ClipboardData(text: code));
           if (!context.mounted) return;

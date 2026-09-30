@@ -132,8 +132,11 @@ class _JoinBusinessScreenState extends ConsumerState<JoinBusinessScreen> {
                 const SizedBox(height: 8),
                 Text(
                   S.tr(
-                    'Utilisez le code d’invitation employé donné par le propriétaire.',
-                    'Use the employee invitation code provided by the owner.',
+                    'Utilisez le code d’invitation donné par le propriétaire. '
+                    'Les codes INV-… rejoignent un commerce synchronisé sur '
+                    'plusieurs appareils.',
+                    'Use the employee invitation code provided by the owner. '
+                    'INV-… codes join a business synced across devices.',
                   ),
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppColors.onSurfaceVariant,
@@ -144,7 +147,7 @@ class _JoinBusinessScreenState extends ConsumerState<JoinBusinessScreen> {
                 KumbaTextField(
                   controller: _code,
                   label: 'Code d’invitation',
-                  hint: 'Ex. A3K9MP2X',
+                  hint: 'Ex. INV-A3K9-MP2X',
                   prefixIcon: Icons.group_add_outlined,
                   textCapitalization: TextCapitalization.characters,
                   inputFormatters: [

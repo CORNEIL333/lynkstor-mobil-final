@@ -271,6 +271,25 @@ CREATE TABLE IF NOT EXISTS device_sync_tokens (
 );
 CREATE INDEX IF NOT EXISTS idx_device_tokens_business ON device_sync_tokens (business_id);
 
+-- Invitations CLOUD multi-postes (migration 20260930000000) : un poste joint
+-- la boutique via un code serveur à usage unique, sans code d'activation.
+CREATE TABLE IF NOT EXISTS business_invitations (
+  id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  business_id    TEXT NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
+  code           TEXT NOT NULL UNIQUE,
+  role           TEXT NOT NULL DEFAULT 'seller'
+                   CHECK (role IN ('manager','seller','stockkeeper','accountant')),
+  status         TEXT NOT NULL DEFAULT 'active'
+                   CHECK (status IN ('active','used','revoked','expired')),
+  created_by     TEXT,
+  expires_at     TIMESTAMPTZ NOT NULL DEFAULT now() + interval '7 days',
+  used_at        TIMESTAMPTZ,
+  used_device_id TEXT,
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_business_invitations_business
+  ON business_invitations (business_id, status);
+
 -- Batches atomiques de sync (remplacement des écritures non atomiques).
 CREATE TABLE IF NOT EXISTS sync_batches (
   id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),

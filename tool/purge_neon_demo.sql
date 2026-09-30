@@ -18,6 +18,7 @@ DELETE FROM device_sync_cursors  WHERE business_id IN (SELECT id FROM businesses
 DELETE FROM device_sync_tokens   WHERE business_id IN (SELECT id FROM businesses WHERE id LIKE 'biz-e2e-%');
 DELETE FROM cloud_backup_records WHERE business_id IN (SELECT id FROM businesses WHERE id LIKE 'biz-e2e-%');
 DELETE FROM field_activities     WHERE business_id IN (SELECT id FROM businesses WHERE id LIKE 'biz-e2e-%');
+DELETE FROM business_invitations  WHERE business_id IN (SELECT id FROM businesses WHERE id LIKE 'biz-e2e-%');
 -- Evenements d'analytique periode test emis par les runs E2E : install_id
 -- 'e2e-<runId>' (tool/verify_neon_backend.mjs). Les installs reels ont un
 -- install_id uuid et ne sont JAMAIS touches.

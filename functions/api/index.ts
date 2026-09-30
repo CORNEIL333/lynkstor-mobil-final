@@ -12,6 +12,9 @@
  *   POST /api/v1/register/validate pré-vérif code agent (apikey)
  *   POST /api/v1/register          inscription business + jeton appareil (apikey)
  *   GET  /api/v1/subscription/status  statut abonnement (Bearer jeton appareil)
+ *   POST /api/v1/invitations/create   code d'invitation multi-postes (Bearer jeton appareil)
+ *   POST /api/v1/invitations/peek     prévisualisation publique d'un code
+ *   POST /api/v1/invitations/accept   rejoindre une boutique -> 2e jeton appareil
  *   POST /api/v1/sync/push         batch idempotent (Bearer jeton appareil)
  *   GET  /api/v1/sync/pull         delta events > cursor (Bearer jeton appareil)
  *   POST /api/v1/auth/login        session admin dashboard (HMAC)
@@ -458,6 +461,189 @@ async function handleSubscriptionStatus(req: Request): Promise<Response> {
     // et d'ancrer sa grâce offline sur une preuve cryptographique.
     licenseToken: r.license_token || null,
   });
+}
+
+// ————————————————————————————————————————————————— Invitations cloud (multi-postes) ———
+// Un second poste de la MÊME boutique rejoint via un code serveur à usage
+// unique (pas de code d'activation consommé). Le quota d'appareils actifs est
+// borné par plans.max_devices (audit déploiement, limite n°16).
+function newInvitationCode(): string {
+  const alpha = "BCDFGHJKLMNPQRSTVWXYZ23456789";
+  const pick = (n: number) =>
+    Array.from(crypto.randomBytes(n)).map((b) => alpha[b % alpha.length]).join("");
+  return `INV-${pick(4)}-${pick(4)}`;
+}
+const INVITATION_ROLES = ["manager", "seller", "stockkeeper", "accountant"];
+
+// { max_devices, active } — max_devices = plan du dernier abonnement, défaut 3.
+async function deviceCapacity(businessId: string): Promise<{ max: number; active: number }> {
+  const { rows } = await pool.query(
+    `SELECT COALESCE((
+              SELECT p.max_devices FROM subscriptions s
+                JOIN plans p ON p.id = s.plan_id
+               WHERE s.business_id = $1
+               ORDER BY s.created_at DESC LIMIT 1
+            ), 3) AS max_devices,
+            (SELECT COUNT(*) FROM device_sync_tokens
+              WHERE business_id = $1 AND revoked_at IS NULL) AS active_devices`,
+    [businessId],
+  );
+  return {
+    max: Number(rows[0]?.max_devices ?? 3),
+    active: Number(rows[0]?.active_devices ?? 0),
+  };
+}
+
+async function handleInvitationCreate(req: Request): Promise<Response> {
+  const dev = await authDevice(req);
+  if (!dev) return err(req, "Non autorisé.", 401);
+  const body = await readJson(req);
+  const role = String(body.role || "seller").trim().toLowerCase();
+  if (!INVITATION_ROLES.includes(role)) return err(req, `Rôle invalide (${INVITATION_ROLES.join(" | ")}).`);
+  const cap = await deviceCapacity(dev.businessId);
+  if (cap.active >= cap.max) {
+    return err(req, `Limite d'appareils atteinte (${cap.active}/${cap.max}). Révoquez un poste côté vendeur.`, 403);
+  }
+  const code = newInvitationCode();
+  const { rows } = await pool.query(
+    `INSERT INTO business_invitations (id, business_id, code, role, created_by, expires_at)
+     VALUES ($1::uuid,$2,$3,$4,$5, now() + interval '7 days')
+     RETURNING code, expires_at`,
+    [crypto.randomUUID(), dev.businessId, code, role, String(body.createdBy || "").trim() || null],
+  );
+  return ok(req, {
+    code: rows[0].code,
+    role,
+    expiresAt: new Date(rows[0].expires_at).toISOString(),
+    devices: `${cap.active}/${cap.max}`,
+  });
+}
+
+async function handleInvitationPeek(req: Request): Promise<Response> {
+  const body = await readJson(req);
+  const code = String(body.code || "").trim().toUpperCase();
+  if (!/^INV-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(code)) return err(req, "Code d'invitation invalide.", 404);
+  const { rows } = await pool.query(
+    `SELECT bi.status, bi.role, bi.expires_at, b.id AS business_id, b.name, b.sector
+       FROM business_invitations bi
+       JOIN businesses b ON b.id = bi.business_id
+      WHERE bi.code = $1`,
+    [code],
+  );
+  if (!rows.length) return err(req, "Code d'invitation inconnu ou expiré.", 404);
+  const r = rows[0];
+  if (r.status !== "active" || new Date(r.expires_at).getTime() < Date.now()) {
+    if (r.status === "active") {
+      pool.query(`UPDATE business_invitations SET status='expired' WHERE code=$1`, [code]).catch(() => {});
+    }
+    return err(req, "Code d'invitation déjà utilisé ou expiré.", 409);
+  }
+  // Aucune donnée sensible : nom + secteur + rôle proposé.
+  return ok(req, { businessId: r.business_id, businessName: r.name, sector: r.sector, role: r.role });
+}
+
+async function handleInvitationAccept(req: Request): Promise<Response> {
+  const body = await readJson(req);
+  const code = String(body.code || "").trim().toUpperCase();
+  const deviceId = String(body.deviceId || "").trim();
+  const fullName = String(body.fullName || "").trim();
+  const phone = String(body.phone || "").trim();
+  if (!/^INV-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(code)) return err(req, "Code d'invitation invalide.", 404);
+  if (!deviceId || deviceId.length > 128) return err(req, "deviceId requis.");
+  if (fullName.length < 2 || fullName.length > 120) return err(req, "Nom complet requis (2 à 120 caractères).");
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const inv = await client.query(
+      `SELECT bi.id, bi.business_id, bi.role, bi.expires_at, b.name, b.sector, b.phone, b.owner_name
+         FROM business_invitations bi
+         JOIN businesses b ON b.id = bi.business_id
+        WHERE bi.code = $1 AND bi.status = 'active'
+        FOR UPDATE`,
+      [code],
+    );
+    if (!inv.rows.length) {
+      await client.query("ROLLBACK");
+      return err(req, "Code d'invitation inconnu ou déjà utilisé.", 404);
+    }
+    const row = inv.rows[0];
+    if (new Date(row.expires_at).getTime() < Date.now()) {
+      await client.query(`UPDATE business_invitations SET status='expired' WHERE id=$1::uuid`, [row.id]);
+      await client.query("ROLLBACK");
+      return err(req, "Code d'invitation expiré.", 409);
+    }
+    // Un seul jeton par appareil et par invitation : re-jointe du même
+    // poste = ré-émission (l'invitation reste marquée utilisée pour l'audit).
+    const existing = await client.query(
+      `SELECT t.token_hash FROM device_sync_tokens t
+        WHERE t.business_id=$1 AND t.device_id=$2 AND t.revoked_at IS NULL`,
+      [row.business_id, deviceId],
+    );
+    if (existing.rows.length) {
+      await client.query("ROLLBACK");
+      return err(req, "Cet appareil est déjà rattaché à ce commerce.", 409);
+    }
+    const cap = await deviceCapacity(row.business_id);
+    if (cap.active >= cap.max) {
+      await client.query("ROLLBACK");
+      return err(req, `Limite d'appareils atteinte (${cap.active}/${cap.max}).`, 403);
+    }
+
+    const userId = crypto.randomUUID();
+    // users.phone est UNIQUE : si le numéro appartient déjà à un autre
+    // compte, on rattache l'utilisateur sans téléphone plutôt qu'en erreur.
+    let phoneValue: string | null = phone || null;
+    if (phoneValue) {
+      const dup = await client.query(`SELECT 1 FROM users WHERE lower(phone) = lower($1) LIMIT 1`, [phoneValue]);
+      if (dup.rows.length) phoneValue = null;
+    }
+    await client.query(
+      `INSERT INTO users (id, business_id, full_name, phone, role, status)
+       VALUES ($1,$2,$3,$4,$5,'active')`,
+      [userId, row.business_id, fullName, phoneValue, row.role],
+    );
+    const token = newSyncToken();
+    await client.query(
+      `INSERT INTO device_sync_tokens (id, business_id, device_id, token_hash)
+       VALUES ($1::uuid,$2,$3,$4)`,
+      [crypto.randomUUID(), row.business_id, deviceId, sha256hex(token)],
+    );
+    await client.query(
+      `UPDATE business_invitations SET status='used', used_at=now(), used_device_id=$2 WHERE id=$1::uuid`,
+      [row.id, deviceId],
+    );
+    await client.query("COMMIT");
+    // Plan courant pour que le poste joint affiche tout de suite un cache
+    // d'abonnement cohérent (best-effort : vide si aucun abonnement).
+    const sub = await client.query(
+      `SELECT plan_name, expires_at FROM subscriptions
+        WHERE business_id=$1 ORDER BY created_at DESC LIMIT 1`,
+      [row.business_id],
+    ).catch(() => ({ rows: [] as any[] }));
+    return ok(req, {
+      businessId: row.business_id,
+      userId,
+      role: row.role,
+      syncToken: token,
+      syncEndpoint: new URL(req.url).origin + "/api/v1/sync/push",
+      planName: sub.rows[0]?.plan_name || null,
+      expiresAt: sub.rows[0]?.expires_at ? new Date(sub.rows[0].expires_at).toISOString() : null,
+      business: {
+        id: row.business_id,
+        name: row.name,
+        sector: row.sector,
+        phone: row.phone,
+        ownerName: row.owner_name,
+      },
+    });
+  } catch (e) {
+    await client.query("ROLLBACK").catch(() => {});
+    console.error("invitation accept error", e);
+    return err(req, "Échec de la jointure.", 500);
+  } finally {
+    client.release();
+  }
 }
 
 async function handleSyncPush(req: Request): Promise<Response> {
@@ -1541,6 +1727,9 @@ async function route(req: Request): Promise<Response> {
   if (m === "POST" && path === "/api/v1/register/validate") return handleRegisterValidate(req);
   if (m === "POST" && path === "/api/v1/register") return handleRegister(req);
   if (m === "GET" && path === "/api/v1/subscription/status") return handleSubscriptionStatus(req);
+  if (m === "POST" && path === "/api/v1/invitations/create") return handleInvitationCreate(req);
+  if (m === "POST" && path === "/api/v1/invitations/peek") return handleInvitationPeek(req);
+  if (m === "POST" && path === "/api/v1/invitations/accept") return handleInvitationAccept(req);
   if (m === "POST" && path === "/api/v1/sync/push") return handleSyncPush(req);
   if (m === "GET" && path === "/api/v1/sync/pull") return handleSyncPull(req);
   if (m === "POST" && path === "/api/v1/auth/login") return handleLogin(req);
